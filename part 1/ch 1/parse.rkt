@@ -31,16 +31,6 @@
        [(-) (sub (parse (second sexp))
                  (parse (third sexp)))])]))
 
-(require rackunit)
-
-(check-equal?
- (parse '3)
- (num 3))
-
-(check-equal?
- (parse '{+ 3 4})
- (add (num 3) (num 4)))
-
-(check-equal?
- (parse '{+ {- 3 4} 7})
- (add (sub (num 3) (num 4)) (num 7)))
+(test (parse '3) (num 3))
+(test (parse '{+ 3 4}) (add (num 3) (num 4)))
+(test (parse '{+ {- 3 4} 7}) (add (sub (num 3) (num 4)) (num 7)))
