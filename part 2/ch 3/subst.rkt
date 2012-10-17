@@ -97,3 +97,10 @@
 (test (calc (parse '{with {x 5} {+ x {with {y 3} x}}})) 10)
 (test (calc (parse '{with {x 5} {with {y x} y}})) 5)
 (test (calc (parse '{with {x 5} {with {x x} x}})) 5)
+
+;; Exercise 3.3.1
+;;
+;; {with {x x} x} ; try to calculate the value for the x in the named-expr location
+;; => error: free identifier
+
+(test/exn (calc (parse '{with {x x} x})) "free identifier")
