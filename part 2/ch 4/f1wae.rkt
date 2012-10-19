@@ -6,6 +6,7 @@
 ;;          | {+ <F1WAE> <F1WAE>}
 ;;          | {- <F1WAE> <F1WAE>}
 ;;          | {with {<id> <F1WAE>} <F1WAE>}
+;;          | {if0 <F1WAE> <F1WAE> <F1WAE>}
 ;;          | <id>
 ;;          | {<id> <F1WAE>}
 
@@ -16,6 +17,7 @@
   [add (lhs F1WAE?) (rhs F1WAE?)]
   [sub (lhs F1WAE?) (rhs F1WAE?)]
   [with (name symbol?) (named-expr F1WAE?) (body F1WAE?)]
+  [if0 (test-expr F1WAE?) (then-expr F1WAE?) (else-expr F1WAE?)]
   [id (name symbol?)]
   [app (fun-name symbol?) (arg F1WAE?)])
 
@@ -35,6 +37,9 @@
        [(with) (with (first (second sexp))
                      (parse (second (second sexp)))
                      (parse (third sexp)))]
+       [(if0) (if0 (parse (second sexp))
+                   (parse (third sexp))
+                   (parse (fourth sexp)))]
        [else (app (first sexp) (parse (second sexp)))])]))
 
 (test (parse '5) (num 5))
@@ -47,6 +52,8 @@
            (sub (num 6) (num 4))))
 (test (parse '{with {x 5} {+ x 6}})
       (with 'x (num 5) (add (id 'x) (num 6))))
+(test (parse '{if0 {- 5 5} 2 3})
+      (if0 (sub (num 5) (num 5)) (num 2) (num 3)))
 (test (parse '{f 10})
       (app 'f (num 10)))
 
@@ -80,11 +87,17 @@
                     ;;   {with {y x}
                     ;;     y}}
                     (subst bound-body sub-id val)))]
+    [if0 (test-expr then-expr else-expr)
+         (if0 (subst test-expr sub-id val)
+              (subst then-expr sub-id val)
+              (subst else-expr sub-id val))]
     [id (v) (if (symbol=? v sub-id) val expr)]
     
     ;; extends subst to handle the F1WAE language
     [app (f x) (app f (subst x sub-id val))]))
 
+(test (subst (parse '{if0 {- x 1} 1 {+ x 2}}) 'x (num 4))
+      (parse '{if0 {- 4 1} 1 {+ 4 2}}))
 (test (subst (app 'f (add (id 'x) (num 1))) 'x (num 5))
       (app 'f (add (num 5) (num 1))))
 
@@ -122,6 +135,11 @@
                          bound-id
                          (num (interp named-expr fun-defs)))
                   fun-defs)]
+    [if0 (test-expr then-expr else-expr)
+         (local ([define test-result (interp test-expr fun-defs)])
+           (if (zero? test-result)
+               (interp then-expr fun-defs)
+               (interp else-expr fun-defs)))]
     [id (v) (error 'interp "free identifier")]
     [app (fun-name arg-expr)
          (local ([define the-fun-def (lookup-fundef fun-name fun-defs)])
@@ -139,6 +157,9 @@
 (test (interp (parse '{dec 5})
               (list (fundef 'dec 'n (sub (id 'n) (num 1)))))
       4)
+
+(test (interp (parse '{if0 0 1 2}) '()) 1)
+(test (interp (parse '{if0 1 1 2}) '()) 2)
 
 ;; Exercise 4.1.1
 ;;
@@ -161,3 +182,25 @@
               (list (fundef 'f 'x (parse '{+ x 10}))
                     (fundef 'g 'y (parse '{f {+ y 1}}))))
       16)
+
+;; Exercise 4.3.1
+;;
+;; Below are some interesting programs that could be written when given that
+;; a function can invoke every other function including itself and that there
+;; exists a way of terminating recursion using if0:
+
+(define interesting-fun-defs
+  (list (fundef 'double
+                'n
+                (parse '{+ n n}))
+        (fundef 'pow2
+                'n
+                (parse '{if0 n 1 {double {pow2 {- n 1}}}}))
+        (fundef 'sum
+                'n
+                (parse '{if0 n 0 {+ n {sum {- n 1}}}}))))
+
+(test (interp (parse '{pow2 10}) interesting-fun-defs)
+      1024)
+(test (interp (parse '{sum 10}) interesting-fun-defs)
+      55)
