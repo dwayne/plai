@@ -4,6 +4,7 @@
 ;;
 ;; <F1WAE> ::= <num>
 ;;          | {+ <F1WAE> <F1WAE>}
+;;          | {- <F1WAE> <F1WAE>}
 ;;          | {with {<id> <F1WAE>} <F1WAE>}
 ;;          | <id>
 ;;          | {<id> <F1WAE>}
@@ -13,6 +14,7 @@
 (define-type F1WAE
   [num (n number?)]
   [add (lhs F1WAE?) (rhs F1WAE?)]
+  [sub (lhs F1WAE?) (rhs F1WAE?)]
   [with (name symbol?) (named-expr F1WAE?) (body F1WAE?)]
   [id (name symbol?)]
   [app (fun-name symbol?) (arg F1WAE?)])
@@ -28,6 +30,8 @@
      (case (first sexp)
        [(+) (add (parse (second sexp))
                  (parse (third sexp)))]
+       [(-) (sub (parse (second sexp))
+                 (parse (third sexp)))]
        [(with) (with (first (second sexp))
                      (parse (second (second sexp)))
                      (parse (third sexp)))]
@@ -38,6 +42,9 @@
 (test (parse '{+ {+ 1 2} {+ 3 4}})
       (add (add (num 1) (num 2))
            (add (num 3) (num 4))))
+(test (parse '{- {- 5 1} {- 6 4}})
+      (sub (sub (num 5) (num 1))
+           (sub (num 6) (num 4))))
 (test (parse '{with {x 5} {+ x 6}})
       (with 'x (num 5) (add (id 'x) (num 6))))
 (test (parse '{f 10})
@@ -52,6 +59,8 @@
   (type-case F1WAE expr
     [num (n) expr]
     [add (l r) (add (subst l sub-id val)
+                    (subst r sub-id val))]
+    [sub (l r) (sub (subst l sub-id val)
                     (subst r sub-id val))]
     [with (bound-id named-expr bound-body)
           (if (symbol=? bound-id sub-id)
@@ -107,6 +116,7 @@
   (type-case F1WAE expr
     [num (n) n]
     [add (l r) (+ (interp l fun-defs) (interp r fun-defs))]
+    [sub (l r) (- (interp l fun-defs) (interp r fun-defs))]
     [with (bound-id named-expr bound-body)
           (interp (subst bound-body
                          bound-id
@@ -125,6 +135,10 @@
                             'n
                             (add (id 'n) (id 'n)))))
       20)
+
+(test (interp (parse '{dec 5})
+              (list (fundef 'dec 'n (sub (id 'n) (num 1)))))
+      4)
 
 ;; Exercise 4.1.1
 ;;
