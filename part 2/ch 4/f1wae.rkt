@@ -125,3 +125,14 @@
                             'n
                             (add (id 'n) (id 'n)))))
       20)
+
+;; Exercise 4.1.1
+;;
+;; Since the argument expression of an application is of type F1WAE we
+;; can use a function application as an argument to a function.
+;;
+;; Here is a sample program that can be written due to this fact:
+
+(test (interp (parse '{inc {inc {inc 0}}})
+              (list (fundef 'inc 'n (add (id 'n) (num 1)))))
+      3)
