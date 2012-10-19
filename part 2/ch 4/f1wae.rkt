@@ -136,3 +136,14 @@
 (test (interp (parse '{inc {inc {inc 0}}})
               (list (fundef 'inc 'n (add (id 'n) (num 1)))))
       3)
+
+;; Exercise 4.1.2
+;;
+;; Since the body expression of a function definition is of type F1WAE we
+;; can use function application within the body of a function, i.e. one
+;; function can call on another function.
+
+(test (interp (parse '{g 5})
+              (list (fundef 'f 'x (parse '{+ x 10}))
+                    (fundef 'g 'y (parse '{f {+ y 1}}))))
+      16)
