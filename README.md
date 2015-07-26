@@ -4,4 +4,5 @@ My notes and solutions.
 
 ## References
 
-- http://www.cs.brown.edu/~sk/Publications/Books/ProgLangs/2007-04-26/
+- [PLAI - Second Edition](http://cs.brown.edu/courses/cs173/2012/book/)
+- [PLAI - First Edition](http://www.cs.brown.edu/~sk/Publications/Books/ProgLangs/2007-04-26/)
